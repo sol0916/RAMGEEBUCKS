@@ -170,4 +170,6 @@ public class MemberDAO {
         }
 
         return member_list;
+    }
+}
   
