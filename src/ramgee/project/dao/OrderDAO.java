@@ -9,11 +9,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class OrderDAO {
+	
+	//field
     private String url = DBProperties.URL;
     private String uid = DBProperties.UID;
     private String upw = DBProperties.UPW;
     private Connection connection;
 
+    //생성자
     public OrderDAO() {
         try {
             Class.forName("oracle.jdbc.driver.OracleDriver");
@@ -23,13 +26,15 @@ public class OrderDAO {
         }
     }
 
+    //주문 추가
     public void addOrder(OrderVO orderVO) {
-        String sql = "INSERT INTO orders (order_no, cart_no, order_date, total_amount, status) VALUES (order_no_seq.NEXTVAL, ?, ?, ?, ?)";
+        String sql = "INSERT INTO orders (order_no, cart_no, order_date, total_amount, total_price, status) VALUES (order_no_seq.NEXTVAL, ?, ?, ?, ?, ?)";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setInt(1, orderVO.getCart_no());
             statement.setDate(2, orderVO.getOrderDate());
             statement.setDouble(3, orderVO.getTotalAmount());
-            statement.setString(4, orderVO.getStatus());
+            statement.setInt(4, orderVO.getTotalPrice());
+            statement.setString(5, orderVO.getStatus());
 
             statement.executeUpdate();
         } catch (SQLException e) {
@@ -38,15 +43,17 @@ public class OrderDAO {
             closeConnection();
         }
     }
-
+    
+    //주문 수정
     public void updateOrder(OrderVO orderVO) {
-        String sql = "UPDATE orders SET cart_no = ?, order_date = ?, total_amount = ?, status = ? WHERE order_no = ?";
+        String sql = "UPDATE orders SET cart_no = ?, order_date = ?, total_amount = ?, total_price = ?, status = ? WHERE order_no = ?";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setInt(1, orderVO.getCart_no());
             statement.setDate(2, orderVO.getOrderDate());
             statement.setDouble(3, orderVO.getTotalAmount());
-            statement.setString(4, orderVO.getStatus());
-            statement.setInt(5, orderVO.getOrder_no());
+            statement.setInt(4, orderVO.getTotalPrice());
+            statement.setString(5, orderVO.getStatus());
+            statement.setInt(6, orderVO.getOrder_no());
 
             statement.executeUpdate();
         } catch (SQLException e) {
@@ -56,6 +63,7 @@ public class OrderDAO {
         }
     }
 
+    //주문 삭제
     public void deleteOrder(int order_no) {
         String sql = "DELETE FROM orders WHERE order_no = ?";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -69,6 +77,7 @@ public class OrderDAO {
         }
     }
 
+    //
     public OrderVO findOrderByOrderNo(int order_no) {
         String sql = "SELECT * FROM orders WHERE order_no = ?";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -81,6 +90,7 @@ public class OrderDAO {
                             resultSet.getInt("cart_no"),
                             resultSet.getDate("order_date"),
                             resultSet.getDouble("total_amount"),
+                            resultSet.getInt("total_price"),
                             resultSet.getString("status"),
                             findProductsByOrderNo(order_no)
                     );
@@ -96,9 +106,10 @@ public class OrderDAO {
         return null;
     }
 
-    public List<OrderVO> findAllOrders() {
+    //모든 주문 출
+    public List<OrderVO> findAllOrders() throws SQLException{
         List<OrderVO> order_list = new ArrayList<>();
-        String sql = "SELECT * FROM orders";
+        String sql = "SELECT * FROM ORDERS";
         try (PreparedStatement statement = connection.prepareStatement(sql);
              ResultSet resultSet = statement.executeQuery()) {
 
@@ -107,11 +118,12 @@ public class OrderDAO {
                 int cart_no = resultSet.getInt("cart_no");
                 Date orderDate = resultSet.getDate("order_date");
                 double totalAmount = resultSet.getDouble("total_amount");
+                int totalPrice = resultSet.getInt("total_price");
                 String status = resultSet.getString("status");
 
                 List<ProductVO> products = findProductsByOrderNo(order_no);
 
-                OrderVO orderVO = new OrderVO(order_no, cart_no, orderDate, totalAmount, status, products);
+                OrderVO orderVO = new OrderVO(order_no, cart_no, orderDate, totalAmount, totalPrice, status, products);
                 order_list.add(orderVO);
             }
         } catch (SQLException e) {
